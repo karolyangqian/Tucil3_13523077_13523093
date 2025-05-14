@@ -21,11 +21,11 @@ public class App extends Application {
         scene = new Scene(loadFXML("primary"), 1080, 720);
         stage.setTitle("Rush Hour Solver");
 
-        RushHour rushHour = new RushHour();
-        rushHour.hello();
-
         stage.setScene(scene);
         stage.show();
+
+        // Uncomment the following line to run the RushHour main method for testing
+        RushHour.main(new String[] { "rushhour" });
     }
 
     static void setRoot(String fxml) throws IOException {
