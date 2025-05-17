@@ -18,7 +18,7 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        scene = new Scene(loadFXML("main"), 1080, 720);
+        scene = new Scene(loadFXML("main"));
         stage.setTitle("Rush Hour Solver");
 
         stage.setScene(scene);
