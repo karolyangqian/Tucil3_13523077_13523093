@@ -22,16 +22,8 @@ public class State {
         this.lastMove = lastMove;
         this.gCost = gCost;
         this.primaryPieceRef = primaryPieceRef;
+        this.hCost = Heuristics.calculateH(this);
     }
-
-    // private PrimaryPiece findPrimaryPiece(List<Piece> currentPieces, int primaryColor) {
-    //     for (Piece p : currentPieces) {
-    //         if (p instanceof PrimaryPiece && p.getColor() == primaryColor) {
-    //             return (PrimaryPiece) p;
-    //         }
-    //     }
-    //     return null; 
-    // }
 
     public int getFCost() {
         return gCost + hCost;
@@ -90,9 +82,6 @@ public class State {
                     if (chosenPiece.moveBackward(newBoard)){
                         newState = new State(newBoard, newPieces, this, move, gCost + 1, newPrimaryPiece);
                         successors.add(newState);
-                        // if (chosenPiece instanceof PrimaryPiece){
-                        //     System.out.println(newState.boardConfiguration.toString());
-                        // }
                     }
                 } 
                 else {
@@ -101,9 +90,6 @@ public class State {
                     if(chosenPiece.moveForward(newBoard)){
                         newState = new State(newBoard, newPieces, this, move, gCost + 1, newPrimaryPiece);
                         successors.add(newState);
-                        // if (chosenPiece instanceof PrimaryPiece){
-                        //     System.out.println(newState.boardConfiguration.toString());
-                        // }
                     }
                 }
             }

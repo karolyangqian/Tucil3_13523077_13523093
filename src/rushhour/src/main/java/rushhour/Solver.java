@@ -19,8 +19,22 @@ public class Solver {
         this.primaryPiece = primaryPiece;
     }
 
-    public void solve() {
-        PriorityQueue<State> openSet = new PriorityQueue<>(Comparator.comparingInt(s -> s.gCost));
+    public enum SearchMode {
+        GREEDY, A_STAR, UCS
+    }
+
+    public void solve(SearchMode searchMode) {
+        PriorityQueue<State> openSet;
+
+        if (searchMode == SearchMode.A_STAR) {
+            openSet = new PriorityQueue<>(Comparator.comparingInt(State::getFCost));
+        } 
+        else if (searchMode == SearchMode.GREEDY) {
+            openSet = new PriorityQueue<>(Comparator.comparingInt(s -> s.hCost));
+        } 
+        else {
+            openSet = new PriorityQueue<>(Comparator.comparingInt(s -> s.gCost));
+        }
 
         Set<String> closedSet = new HashSet<>();
 
@@ -30,13 +44,14 @@ public class Solver {
             State currentState = openSet.poll();
             // System.out.println(currentState.boardConfiguration.toString());
             closedSet.add(currentState.toString());
+            numMoves++;
 
             // if (currentState.gCost > 2) return;
 
             if (currentState.isGoal()) {
                 foundSolution = true;
-                numMoves = currentState.gCost;
                 currentState.printMoves();
+                System.out.println("Found solution in " + numMoves + " moves.");
                 // System.out.println("Found solution in " + numMoves + " moves.");
                 return;
             }
