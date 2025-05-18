@@ -23,7 +23,7 @@ public class Main {
         
         Piece pieceJ = new Piece(new String[]{"J", "J"}, 'J', 4, 2); // Vertical
         
-        Piece pieceL = new Piece(new String[]{"LL"}, 'L', 5, 0); // Horizontal
+        Piece pieceL = new Piece(new String[]{"LL"}, 'L', 5, 0); // Horizontalokok
         Piece pieceM = new Piece(new String[]{"MM"}, 'M', 5, 3); // Horizontal
 
         List<Piece> pieces = List.of(pieceA, pieceB, pieceC, pieceD, pieceF, pieceG, primaryP, pieceH, pieceI, pieceJ, pieceL, pieceM);
