@@ -3,9 +3,8 @@ package rushhour;
 public class Piece {
     protected int posI, posJ;
     protected int width, height;
-    protected int color;
+    protected char color;
     protected boolean isVertical;
-    protected int[][] piece;
     protected boolean isInvalid = false;
     protected String errorMsg;
 
@@ -16,7 +15,6 @@ public class Piece {
         this.isVertical = this.width < this.height;
         this.posI = i;
         this.posJ = j;
-        this.piece = new int[height][width];
         if (this.isVertical && this.width != 1) {
             isInvalid = true;
             errorMsg = "Invalid piece: " + color + " at (" + i + ", " + j + "). " +
@@ -29,18 +27,17 @@ public class Piece {
                     "Expected: piece's dimensions has to be " + width + "x1, but found: " + width + "x" + height;
             return;
         }
+    }
 
-        for (int k = 0; k < height; k++) {
-            for (int l = 0; l < width; l++) {
-                if (piece[k].charAt(l) == color) this.piece[k][l] = this.color;
-                else {
-                    this.piece[k][l] = -1;
-                    isInvalid = true;
-                    errorMsg = "Invalid piece: " + color + " at (" + i + ", " + j + "). " +
-                            "Expected: " + piece[k].charAt(l) + ", but found: " + color;
-                }
-            }
-        }
+    public Piece(Piece piece) {
+        this.posI = piece.posI;
+        this.posJ = piece.posJ;
+        this.width = piece.width;
+        this.height = piece.height;
+        this.color = piece.color;
+        this.isVertical = piece.isVertical;
+        this.isInvalid = piece.isInvalid;
+        this.errorMsg = piece.errorMsg;
     }
 
     public boolean isPlaceable(int i, int j, Board board) {
@@ -49,7 +46,7 @@ public class Piece {
         }
         for (int k = 0; k < height; k++) {
             for (int l = 0; l < width; l++) {
-                if (piece[k][l] != -1 && board.isOccupied(i + k, j + l)) {
+                if (board.isOccupied(i + k, j + l) && board.getPieceAt(i + k, j + l) != this) {
                     return false;
                 }
             }
@@ -59,19 +56,19 @@ public class Piece {
 
     public boolean place(int i, int j, Board board){
         if (!isPlaceable(i, j, board)) return false;
-
+        board.unplacePiece(this);
         this.posI = i;
         this.posJ = j;
         board.placePiece(this);
         return true;
     }
 
-    public boolean moveForward(int i, int j, Board board) {
-        return isVertical ? place(i + 1, j, board) : place(i, j + 1, board);
+    public boolean moveForward(Board board) {
+        return isVertical ? place(posI + 1, posJ, board) : place(posI, posJ + 1, board);
     }
 
-    public boolean moveBackward(int i, int j, Board board) {
-        return isVertical ? place(i - 1, j, board) : place(i, j - 1, board);
+    public boolean moveBackward(Board board) {
+        return isVertical ? place(posI - 1, posJ, board) : place(posI, posJ - 1, board);
     }
 
     
@@ -87,14 +84,11 @@ public class Piece {
     public int getHeight() {
         return height;
     }
-    public int getColor() {
+    public char getColor() {
         return color;
     }
     public boolean isVertical() {
         return isVertical;
-    }
-    public int[][] getPiece() {
-        return piece;
     }
     public boolean isInvalid() {
         return isInvalid;
