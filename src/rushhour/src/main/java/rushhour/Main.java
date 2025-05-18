@@ -2,6 +2,8 @@ package rushhour;
 
 import java.util.List;
 
+import rushhour.Solver.SearchMode;
+
 public class Main {
     public static void main(String[] args) {
         Board board = new Board(6, 6, 2, 5); // Corrected winPosJ to be the last column index (5)
@@ -31,6 +33,7 @@ public class Main {
         board.buildBoard(pieces);
 
         Solver solver = new Solver(board, pieces, primaryP);
-        solver.solve();
+        Heuristics.heuristicType = "MANHATTAN"; // Set heuristic type
+        solver.solve(SearchMode.A_STAR);
     }
 }
