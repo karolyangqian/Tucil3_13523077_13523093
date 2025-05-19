@@ -25,22 +25,6 @@ public class PrimaryPiece extends Piece {
         return false;
     }
 
-    // @Override
-    // public boolean isPlaceable(int i, int j, Board board) {
-        
-    //     for (int k = 0; k < getHeight(); k++) {
-    //         for (int l = 0; l < getWidth(); l++) {
-    //             if (board.isOccupied(i + k, j + l) && board.getPieceAt(i + k, j + l) != this) {
-    //                 return false;
-    //             }
-    //         }
-    //     }
-    //     if (i <= 0 || j <= 0 || i + getHeight() >= board.getHeight() || j + getWidth() >= board.getWidth()) {
-    //         return isWinningPos(i, j, board);
-    //     }
-    //     return true;
-    // }
-
     @Override
     public boolean place(int i, int j, Board board) {
         if (!isPlaceable(i, j, board)) return false;
