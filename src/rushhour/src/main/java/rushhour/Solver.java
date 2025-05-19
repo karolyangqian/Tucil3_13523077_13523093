@@ -1,10 +1,10 @@
 package rushhour;
 
-import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Set;
 
 public class Solver {
     private Board board;
@@ -50,7 +50,7 @@ public class Solver {
 
             if (currentState.isGoal()) {
                 foundSolution = true;
-                System.out.println("Found solution in " + numMoves + " moves.");
+                System.out.println("Found solution in " + numMoves + " nodes.");
                 return currentState.getMoves();
             }
 

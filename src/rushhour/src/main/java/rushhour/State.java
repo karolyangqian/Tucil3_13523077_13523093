@@ -1,7 +1,7 @@
 package rushhour;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class State {
     Board boardConfiguration; 
@@ -126,6 +126,10 @@ public class State {
             System.out.println(states.get(i).boardConfiguration.toString());
         }
         return states.reversed();
+    }
+
+    public List<Piece> getPieces() {
+        return piecesState;
     }
 
 }

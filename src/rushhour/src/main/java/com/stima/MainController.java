@@ -5,15 +5,15 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
-import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
-import javafx.util.Duration;
-
+import javafx.animation.SequentialTransition;
+import javafx.animation.Timeline;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -24,9 +24,14 @@ import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import rushhour.Board;
+import rushhour.Heuristics;
 import rushhour.Piece;
 import rushhour.PrimaryPiece;
+import rushhour.Solver;
+import rushhour.Solver.SearchMode;
+import rushhour.State;
 
 public class MainController {
 
@@ -36,6 +41,8 @@ public class MainController {
 
     private static final int BOARD_PANE_WIDTH = 400;
     private static final int BOARD_PANE_HEIGHT = 350;
+
+    private static final int STEP_DURATION = 200; // milliseconds
 
     // FXML Components
     @FXML private ChoiceBox<String> algorithmChoiceBox;
@@ -49,6 +56,8 @@ public class MainController {
     @FXML private Button nextButton;
     @FXML private Button previousButton;
     @FXML private Button playButton;
+    @FXML private Button applyConfigurationButton;
+    @FXML private Label stepCounterLabel;
     
     // Game State
     private int gridSize;
@@ -56,8 +65,14 @@ public class MainController {
     private File currentFile;
     private long solvingStartTime;
     private List<Piece> pieces;
+    private PrimaryPiece primaryPiece;
+    private List<State> solutionSteps;
+    private int currentStep = 0;
+    private Solver solver;
     private boolean isPlaying = false;
     private boolean isSolved = false;
+    private boolean isConfigured = false;
+    private SequentialTransition sequentialTransition;
 
     // FXML Components for the board
     @FXML private Pane boardPane;
@@ -74,24 +89,40 @@ public class MainController {
     public void initialize() {
         isSolved = false;
         isPlaying = false;
+        isConfigured = false;
 
         playButton.setDisable(true);
         nextButton.setDisable(true);
         previousButton.setDisable(true);
+        exportButton.setDisable(true);
+        heuristicChoiceBox.setDisable(true);
+        stepCounterLabel.setVisible(false);
+        algorithmChoiceBox.setDisable(false);
+
 
         algorithmChoiceBox.getItems().addAll("UCS", "A*", "GBFS");
         algorithmChoiceBox.setValue("UCS");
         
         heuristicChoiceBox.getItems().addAll("Manhattan", "Euclidean");
-        heuristicChoiceBox.setValue("Manhattan");
+        heuristicChoiceBox.setValue("");
         
         algorithmChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             boolean heuristicNeeded = !newVal.equals("UCS");
+            heuristicChoiceBox.setValue(heuristicNeeded ? "Manhattan" : "");
             heuristicChoiceBox.setDisable(!heuristicNeeded);
         });
 
-        exportButton.setDisable(true);
-        heuristicChoiceBox.setDisable(true);
+    }
+
+    private void initializeBoard() {
+        // TODO: might need try catch to handle invalid input
+
+        String rawInput = boardTextArea.getText();
+        
+        if(!validateBoardInput(rawInput)) {
+            exportButton.setDisable(true);
+            throw new IllegalArgumentException("Invalid board configuration");
+        }
 
         // Initialize rush hour board dimensions and goal position
         int row = 6;
@@ -99,30 +130,29 @@ public class MainController {
         int winPosI = 2;
         int winPosJ = 5;
         board = new Board(row, col, winPosI, winPosJ);
-        
 
+        // board = parseBoard(rawInput);
+        
         // Calculate grid size based on board dimensions
         gridSize = Math.max(calculateGridSize(row, col), MIN_GRID_SIZE);
-
-
+        
         // Initialize board pane dimension
         boardPane.setPrefSize(col * gridSize, row * gridSize);
         boardPane.setStyle("-fx-background-color: lightgray;");
-
+        
         // Initialize pieces
         initializePieces();
+
+        // Initialize solver
+        solver = new Solver(board, pieces, primaryPiece);
 
         // Initialize goal display
         initializeGoalDisplay();
 
         // Set pieces as draggable
         boardPane.getChildren().forEach(this::makeDraggable);
-
     }
 
-    private int calculateGridSize(int row, int col) {
-        return Math.min(BOARD_PANE_WIDTH / col, BOARD_PANE_HEIGHT / row);
-    }
 
     private void initializeGoalDisplay() {
         double triangleBase = gridSize * 0.5;
@@ -147,6 +177,7 @@ public class MainController {
 
     private void initializePieces() {
 
+        // TODO: Implement piece initialization logic
         // Stub pieces
         Piece pieceA = new Piece(new String[]{"AA"}, 'A', 0, 0);
         Piece pieceB = new Piece(new String[]{"B", "B"}, 'B', 0, 2); // Vertical
@@ -162,17 +193,18 @@ public class MainController {
         Piece pieceH = new Piece(new String[]{"H", "H"}, 'H', 3, 1); // Vertical
         Piece pieceI = new Piece(new String[]{"III"}, 'I', 3, 3); // Horizontal
         
-        Piece pieceJ = new Piece(new String[]{"J", "J"}, 'J', 4, 2); // Vertical
+        Piece pieceJ = new Piece(new String[]{"J", "J"}, 'J', 4, 2); // Vertical    
         
         Piece pieceL = new Piece(new String[]{"LL"}, 'L', 5, 0); // Horizontalokok
         Piece pieceM = new Piece(new String[]{"MM"}, 'M', 5, 3); // Horizontal
 
         pieces = List.of(pieceA, pieceB, pieceC, pieceD, pieceF, pieceG, primaryP, pieceH, pieceI, pieceJ, pieceL, pieceM);
+        primaryPiece = primaryP;
         board.buildBoard(pieces);
 
         // Initialize pieces on the board
         boardRectangles = new ArrayList<>();
-        for (Piece piece : pieces) {
+        for (Piece piece : pieces) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
             PieceRectangle rect = new PieceRectangle(piece.getWidth() * gridSize - 2*GRID_BORDER,
                                                           piece.getHeight() * gridSize - 2*GRID_BORDER);
             rect.setX(piece.getPosJ() * gridSize + GRID_BORDER);
@@ -196,48 +228,203 @@ public class MainController {
     // Animation logic
     // ================================================================================
 
-    private void movePieceRectangle(PieceRectangle rect, int cellsX, int cellsY) {
-        if (rect == null) return;
-        if (cellsX == 0 && cellsY == 0) return;
-        if (isPlaying) return;
-        
-        isPlaying = true;
+    private Timeline createPieceTimeline(PieceRectangle rect, int cellsX, int cellsY) {
+
         double targetX = rect.getX() + cellsX * gridSize;
         double targetY = rect.getY() + cellsY * gridSize;
 
         Timeline timeline = new Timeline(
-            new KeyFrame(Duration.millis(200),
+            new KeyFrame(Duration.millis(STEP_DURATION),
             new KeyValue(rect.xProperty(), targetX),
             new KeyValue(rect.yProperty(), targetY))
         );
-        timeline.play();
-        timeline.setOnFinished(e -> {
-            isPlaying = false;
-        });
+        return timeline;
     }
+
+    private void movePieceRectangle(PieceRectangle rect, int cellsX, int cellsY) {
+        if (rect == null) return;
+        System.out.println("Moving piece rectangle: " + rect.getColor() + " by (" + cellsX + ", " + cellsY + ")");
+        if (cellsX == 0 && cellsY == 0) return;
+        // if (isPlaying) return;
+        
+        Timeline timeline = createPieceTimeline(rect, cellsX, cellsY);
+        // timeline.setOnFinished(e -> {
+        //     isPlaying = false;
+        // });
+        timeline.play();
+    }
+
 
     @FXML
     private void onClickPlay() {
-        if (isPlaying) {
-            playButton.setText("Play");
-            isPlaying = false;
-        } else {
-            playButton.setText("Pause");
-            isPlaying = true;
+        if (solutionSteps == null || solutionSteps.isEmpty()) {
+            return;
         }
+
+        setRectanglesToCurrentState();
+        if (isPlaying) {
+            // Pause the animation
+            isPlaying = false;
+            playButton.setText("Play");
+            nextButton.setDisable(false);
+            previousButton.setDisable(false);
+            // set stop on the next animation
+            if (sequentialTransition != null) {
+                sequentialTransition.stop();
+            }
+            return;
+        }
+
+        isPlaying = true;
+        playButton.setText("Pause");
+        nextButton.setDisable(true);
+        previousButton.setDisable(true);
+
+        // Create a sequential transition for all steps
+        if (sequentialTransition != null) {
+            sequentialTransition.stop();
+        }
+        sequentialTransition = new SequentialTransition();
+
+        // Start from current step
+        State currentState = solutionSteps.get(currentStep);
+        int deltaX = 0, deltaY = 0, pieceIndex = -1, stepCount = 0;
+        Timeline timeline = null;
+        for (int step = currentStep; step < solutionSteps.size() - 1 && isPlaying; step++) {
+            State nextState = solutionSteps.get(step + 1);
+            
+            timeline = null;
+            
+            // search for a piece that moves
+            for (int i = 0; i < pieces.size(); i++) {
+                Piece piece = currentState.getPieces().get(i);
+                Piece nextPiece = nextState.getPieces().get(i);
+                if (piece.getPosI() != nextPiece.getPosI() || piece.getPosJ() != nextPiece.getPosJ()) {
+
+                    stepCount++;
+                    if (pieceIndex == -1) {
+                        pieceIndex = i;
+                        deltaX = nextPiece.getPosJ() - piece.getPosJ();
+                        deltaY = nextPiece.getPosI() - piece.getPosI();
+                    } else if (pieceIndex == i) {
+                        deltaX += nextPiece.getPosJ() - piece.getPosJ();
+                        deltaY += nextPiece.getPosI() - piece.getPosI();
+                    } else {
+                        PieceRectangle previousRect = boardRectangles.get(pieceIndex);
+                        timeline = createPieceTimeline(previousRect, deltaX, deltaY);
+                        final int currentStepFinal = stepCount;
+                        timeline.setOnFinished(e -> {
+                            currentStep += currentStepFinal;
+                            updateStepCounterLabel();
+                        });
+                        
+                        pieceIndex = i;
+                        stepCount = 0;
+                        deltaX = nextPiece.getPosJ() - piece.getPosJ();
+                        deltaY = nextPiece.getPosI() - piece.getPosI();
+                    }
+                    currentState = nextState;
+                    break;
+
+                }
+            }
+
+            if (timeline == null) {
+                continue;
+            }
+            sequentialTransition.getChildren().add(timeline);
+        }
+
+        if (pieceIndex != -1) {
+            timeline = createPieceTimeline(boardRectangles.get(pieceIndex), deltaX, deltaY);
+            final int currentStepFinal = stepCount;
+            timeline.setOnFinished(e -> {
+                currentStep += currentStepFinal;
+                updateStepCounterLabel();
+            });
+            sequentialTransition.getChildren().add(timeline);
+        }
+        
+        sequentialTransition.setOnFinished(e -> {
+            currentStep = solutionSteps.size() - 1;
+            isPlaying = false;
+            playButton.setText("Play");
+            nextButton.setDisable(false);
+            previousButton.setDisable(false);
+        });
+        
+        sequentialTransition.play();
     }
     
     @FXML
     private void onClickNext() {
         if (!isPlaying) {
-            movePieceRectangle(boardRectangles.get(boardRectangles.size()-1), 1, 0);
+            setRectanglesToCurrentState();
+            nextStep();
+        }
+    }
+    
+    private void nextStep() {
+        if (currentStep < solutionSteps.size() - 1) {
+            State currentState = solutionSteps.get(currentStep);
+            State nextState = solutionSteps.get(++currentStep);
+            for (int i = 0; i < pieces.size(); i++) {
+                Piece piece = currentState.getPieces().get(i);
+                Piece nextPiece = nextState.getPieces().get(i);
+                if (piece.getPosI() != nextPiece.getPosI() || piece.getPosJ() != nextPiece.getPosJ()) {
+                    int deltaX = nextPiece.getPosJ() - piece.getPosJ();
+                    int deltaY = nextPiece.getPosI() - piece.getPosI();
+                    movePieceRectangle(boardRectangles.get(i), deltaX, deltaY);
+                }
+            }
+            updateStepCounterLabel();
         }
     }
 
     @FXML
     private void onClickPrevious() {
         if (!isPlaying) {
-            movePieceRectangle(boardRectangles.get(boardRectangles.size()-1), -1, 0);
+            setRectanglesToCurrentState();
+            previousStep();
+        }
+    }
+    
+    private void previousStep() {
+        if (currentStep > 0) {
+            State currentState = solutionSteps.get(currentStep);
+            State prevState = solutionSteps.get(--currentStep);
+            for (int i = 0; i < pieces.size(); i++) {
+                Piece piece = currentState.getPieces().get(i);
+                Piece prevPiece = prevState.getPieces().get(i);
+                if (piece.getPosI() != prevPiece.getPosI() || piece.getPosJ() != prevPiece.getPosJ()) {
+                    int deltaX = prevPiece.getPosJ() - piece.getPosJ();
+                    int deltaY = prevPiece.getPosI() - piece.getPosI();
+                    movePieceRectangle(boardRectangles.get(i), deltaX, deltaY);
+                }
+            }
+            updateStepCounterLabel();
+        }
+    }
+
+    private void setRectanglesToCurrentState() {
+        if (currentStep < solutionSteps.size()) {
+            State currentState = solutionSteps.get(currentStep);
+            for (int i = 0; i < pieces.size(); i++) {
+                Piece piece = currentState.getPieces().get(i);
+                PieceRectangle rect = boardRectangles.get(i);
+                rect.setX(piece.getPosJ() * gridSize + GRID_BORDER);
+                rect.setY(piece.getPosI() * gridSize + GRID_BORDER);
+            }
+            updateStepCounterLabel();
+        }
+    }
+
+    private void updateStepCounterLabel() {
+        System.out.println("Current step: " + currentStep);
+        if (solutionSteps != null && !solutionSteps.isEmpty() && isSolved) { 
+            stepCounterLabel.setText("Step: " + (currentStep + 1) + " out of " + solutionSteps.size());
+        } else {
+            stepCounterLabel.setText("Step: -"); 
         }
     }
 
@@ -294,7 +481,6 @@ public class MainController {
         dragStartY = event.getSceneY();
         rectStartX = boardRectangle.getX();
         rectStartY = boardRectangle.getY();
-        // boardRectangle.toFront();
         boardRectangle.setFill(javafx.scene.paint.Color.YELLOW);
     }
 
@@ -400,6 +586,25 @@ public class MainController {
     // ================================================================================
 
     @FXML
+    private void onClickApplyConfiguration() {
+        clearAlerts();
+        clearBoard();
+        
+        try {
+            initializeBoard();
+            showAlert("Configuration applied successfully!", "SUCCESS");
+
+            isConfigured = true;
+        } catch (IllegalArgumentException e) {
+            showAlert("Invalid board configuration: " + e.getMessage(), "ERROR");
+            exportButton.setDisable(true);
+            playButton.setDisable(true);
+            nextButton.setDisable(true);
+            previousButton.setDisable(true);
+        }
+    }
+
+    @FXML
     private void onClickUploadFile() {
         clearAlerts();
         clearBoard();
@@ -460,57 +665,100 @@ public class MainController {
         }
     }
 
-    private void setupSolveTask(Task<Void> solveTask) {
-        solveTask.setOnSucceeded(e -> {
-            long solvingDuration = System.currentTimeMillis() - solvingStartTime;
-            String durationMessage = formatDuration(solvingDuration);
-            long steps = 12; // TODO: Replace with actual step count
-            showAlert("Solution found! Steps: " + steps + " | Time: " + durationMessage, "SUCCESS");
-            exportButton.setDisable(false);
-        });
-
-        solveTask.setOnFailed(e -> {
-            showAlert("Failed to find solution: " + solveTask.getException().getMessage(), "ERROR");
-            exportButton.setDisable(true);
-        });
-    }
-
     @FXML
     private void onClickSolve() {
+        if (!isConfigured) {
+            showAlert("Please configure the board first!", "ERROR");
+            return;
+        }
+
+        // Reset isSolved if you intend to allow re-solving
+        isSolved = false; 
+
         clearAlerts();
-        String rawInput = boardTextArea.getText();
-        
-        if(!validateBoardInput(rawInput)) {
-            exportButton.setDisable(true);
-            return;
-        }
-        
-        try {
-            board = parseBoard(rawInput);
-        } catch (IllegalArgumentException e) {
-            showAlert("Invalid board configuration: " + e.getMessage(), "ERROR");
-            exportButton.setDisable(true);
-            return;
+
+        SearchMode searchMode;
+        switch (algorithmChoiceBox.getValue()) {
+            case "UCS":
+                searchMode = SearchMode.UCS;
+                break;
+            case "A*":
+                searchMode = SearchMode.A_STAR;
+                break;
+            case "GBFS":
+                searchMode = SearchMode.GREEDY;
+                break;
+            default:
+                showAlert("Invalid algorithm selected", "ERROR");
+                return;
         }
 
-        solvingStartTime = System.currentTimeMillis();
+        String heuristic = heuristicChoiceBox.getValue();
 
-        Task<Void> solveTask = new Task<Void>() {
+
+        Task<Boolean> solveTask = new Task<Boolean>() {
             @Override
-            protected Void call() {
-                // TODO: Implement solving algorithm
-                try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
-                playButton.setDisable(false);
-                nextButton.setDisable(false);
-                previousButton.setDisable(false);
-                isSolved = true;
-                isPlaying = false;
-                return null;
+            protected Boolean call() throws Exception { // It's good practice to declare exceptions solver.solve might throw
+                Heuristics.heuristicType = heuristic.toUpperCase();
+                solutionSteps = solver.solve(searchMode); // Or get from ChoiceBox
+
+                boolean foundSolution = solver.hasFoundSolution(); 
+                return foundSolution;
             }
         };
 
-        setupSolveTask(solveTask);
+        setupSolveTask(solveTask); // Pass the modified task
+        solvingStartTime = System.currentTimeMillis();
         new Thread(solveTask).start();
+    }
+
+    // Modify setupSolveTask to handle Task<Boolean>
+    private void setupSolveTask(Task<Boolean> solveTask) {
+        solveTask.setOnSucceeded(e -> {
+            boolean foundSolution = solveTask.getValue();
+            isSolved = foundSolution;
+
+            if (foundSolution) {
+                long solvingDuration = System.currentTimeMillis() - solvingStartTime;
+                String durationMessage = formatDuration(solvingDuration);
+                long steps = solutionSteps.size();
+
+                if (heuristicChoiceBox.getValue().isBlank()) {
+                    showAlert("Solution found using " + algorithmChoiceBox.getValue() + "!\n" +
+                              "Steps: " + steps + "\nTime: " + durationMessage, "SUCCESS");
+                } else {
+                    showAlert("Solution found using " + algorithmChoiceBox.getValue() + " with " + (heuristicChoiceBox.getValue()) + " heuristic!\n" +
+                              "Steps: " + steps + "\nTime: " + durationMessage, "SUCCESS");
+                }
+                
+                currentStep = 0;
+                exportButton.setDisable(false);
+                playButton.setDisable(false);
+                nextButton.setDisable(false);
+                previousButton.setDisable(false);
+                stepCounterLabel.setVisible(true);
+                updateStepCounterLabel(); 
+            } else {
+                showAlert("No solution found.", "ERROR");
+                exportButton.setDisable(true);
+                playButton.setDisable(true);
+                nextButton.setDisable(true);
+                previousButton.setDisable(true);
+                stepCounterLabel.setVisible(false);
+            }
+        });
+
+        solveTask.setOnFailed(e -> {
+            isSolved = false; 
+            Throwable exception = solveTask.getException();
+            showAlert("Error during solving: " + exception.getMessage(), "ERROR");
+            exportButton.setDisable(true);
+            playButton.setDisable(true);
+            nextButton.setDisable(true);
+            previousButton.setDisable(true);
+            stepCounterLabel.setVisible(false);
+            exception.printStackTrace();
+        });
     }
 
     private boolean validateBoardInput(String input) {
@@ -557,14 +805,25 @@ public class MainController {
     }
 
     private void clearBoard() {
-        boardTextArea.clear();
-        board = null;
-        currentFile = null;
+        if (boardPane != null) boardPane.getChildren().clear();
+        if (boardRectangles != null) boardRectangles.clear();
+        if (solutionSteps != null) solutionSteps.clear();
+        isSolved = false;
+        isPlaying = false;
+        isConfigured = false;
         exportButton.setDisable(true);
+        playButton.setDisable(true);
+        nextButton.setDisable(true);
+        previousButton.setDisable(true);
+        stepCounterLabel.setVisible(isSolved);
     }
 
     private void clearFileName() {
         filenameText.setText("");
+    }
+
+    private int calculateGridSize(int row, int col) {
+        return Math.min(BOARD_PANE_WIDTH / col, BOARD_PANE_HEIGHT / row);
     }
 
 

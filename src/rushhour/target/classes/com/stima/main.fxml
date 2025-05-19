@@ -17,11 +17,11 @@
    <children>
       <Pane fx:id="controlPanel" layoutX="14.0" layoutY="7.0" prefHeight="474.0" prefWidth="206.0">
          <children>
-            <ChoiceBox fx:id="heuristicChoiceBox" layoutX="25.0" layoutY="428.0" prefWidth="150.0" />
-            <Label layoutX="25.0" layoutY="406.0" style="-fx-font-weight: bold;" text="Choose Heuristic" />
+            <ChoiceBox fx:id="heuristicChoiceBox" layoutX="26.0" layoutY="435.0" prefWidth="150.0" />
+            <Label layoutX="26.0" layoutY="413.0" style="-fx-font-weight: bold;" text="Choose Heuristic" />
             
-            <ChoiceBox fx:id="algorithmChoiceBox" layoutX="25.0" layoutY="366.0" prefWidth="150.0" />
-            <Label layoutX="25.0" layoutY="344.0" style="-fx-font-weight: bold;" text="Choose Algorithm" />
+            <ChoiceBox fx:id="algorithmChoiceBox" layoutX="26.0" layoutY="373.0" prefWidth="150.0" />
+            <Label layoutX="26.0" layoutY="351.0" style="-fx-font-weight: bold;" text="Choose Algorithm" />
             
             <Pane layoutX="25.0" layoutY="73.0" prefHeight="163.0" prefWidth="183.0">
                <children>
@@ -37,6 +37,7 @@
                   </Pane>
                </children>
             </Pane>
+            <Button fx:id="applyConfigurationButton" layoutX="25.0" layoutY="313.0" mnemonicParsing="false" onAction="#onClickApplyConfiguration" text="Apply" />
          </children>
       </Pane>
       
@@ -72,5 +73,6 @@
             <Button fx:id="nextButton" mnemonicParsing="false" onAction="#onClickNext" text="&gt;" />
          </children>
       </HBox>
+      <Label fx:id="stepCounterLabel" layoutX="528.0" layoutY="84.0" text="Step 0 out of 10" />
    </children>
 </AnchorPane>
