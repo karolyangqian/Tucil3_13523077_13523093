@@ -23,7 +23,7 @@ public class Solver {
         GREEDY, A_STAR, UCS
     }
 
-    public void solve(SearchMode searchMode) {
+    public List<State> solve(SearchMode searchMode) {
         PriorityQueue<State> openSet;
 
         if (searchMode == SearchMode.A_STAR) {
@@ -50,10 +50,8 @@ public class Solver {
 
             if (currentState.isGoal()) {
                 foundSolution = true;
-                currentState.printMoves();
                 System.out.println("Found solution in " + numMoves + " moves.");
-                // System.out.println("Found solution in " + numMoves + " moves.");
-                return;
+                return currentState.getMoves();
             }
 
             List<State> successors = currentState.generateSuccessors();
@@ -65,6 +63,7 @@ public class Solver {
         }
 
         System.out.println("No solution found.");
+        return List.of();
 
     }
 

@@ -110,7 +110,7 @@ public class State {
     //     return moves;
     // }
 
-    public void printMoves(){
+    public List<State> getMoves(){
         State currentState = this;
         List<Move> moves = new ArrayList<>();
         List<State> states = new ArrayList<>();
@@ -125,6 +125,7 @@ public class State {
             System.out.println("Gerakan " + (moves.size() - i) + ": " + moves.get(i).toString());
             System.out.println(states.get(i).boardConfiguration.toString());
         }
+        return states.reversed();
     }
 
 }
