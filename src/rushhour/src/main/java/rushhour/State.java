@@ -125,8 +125,8 @@ public class State {
         reversedStates.add(states.get(states.size() - 1)); // Add the initial state
         for (int i = moves.size() - 1; i >= 0; i--) {
             reversedStates.add(states.get(i));
-            System.out.println("Gerakan " + (moves.size() - i) + ": " + moves.get(i).toString());
-            System.out.println(states.get(i).boardConfiguration.toString());
+            // System.out.println("Gerakan " + (moves.size() - i) + ": " + moves.get(i).toString());
+            // System.out.println(states.get(i).boardConfiguration.toString());
         }
         return reversedStates;
     }

@@ -169,7 +169,6 @@ public class MainController {
             pieces = r.getPieces();
             primaryPiece = r.getPrimaryPieceRef();
             board = r.getBoard();
-            System.out.println("Goal position: " + board.getWinPosI() + ", " + board.getWinPosJ());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(e.getMessage());
         }
@@ -277,6 +276,8 @@ public class MainController {
             playButton.setText("Play");
             nextButton.setDisable(false);
             previousButton.setDisable(false);
+            toStartButton.setDisable(false);
+            toEndButton.setDisable(false);
             if (sequentialTransition != null) {
                 sequentialTransition.stop();
             }
@@ -287,6 +288,8 @@ public class MainController {
         playButton.setText("Pause");
         nextButton.setDisable(true);
         previousButton.setDisable(true);
+        toStartButton.setDisable(true);
+        toEndButton.setDisable(true);
 
         // Create a sequential transition for all steps
         if (sequentialTransition != null) {
@@ -320,6 +323,7 @@ public class MainController {
                     // piece moved
                     stepCount++;
                     if (pieceIndex == -1) {
+                        stepCount = 0;
                         pieceIndex = i;
                         deltaX = nextPiece.getPosJ() - piece.getPosJ();
                         deltaY = nextPiece.getPosI() - piece.getPosI();
@@ -374,7 +378,6 @@ public class MainController {
                 } else {
                     newDelta[0] = board.getWinPosJ() - pieceOnPlay.getPosJ() - (board.getWinPosJ() == 0 ? pieceOnPlay.getWidth() - 1 : 0);
                 }
-                System.out.println("Moving piece " + pieceIndex + " with delta: " + newDelta[0] + ", " + newDelta[1]);
             }
             timeline = createPieceTimeline(boardRectangles.get(pieceIndex), newDelta[0], newDelta[1]);
             final int currentStepFinal = stepCount;
@@ -391,8 +394,12 @@ public class MainController {
             playButton.setText("Play");
             nextButton.setDisable(false);
             previousButton.setDisable(false);
+            toStartButton.setDisable(false);
+            toEndButton.setDisable(false);
         });
         
+        currentStep++;
+        updateStepCounterLabel();
         sequentialTransition.play();
     }
 
@@ -822,7 +829,7 @@ public class MainController {
             if (foundSolution) {
                 long solvingDuration = System.currentTimeMillis() - solvingStartTime;
                 String durationMessage = formatDuration(solvingDuration);
-                long steps = solutionSteps.size();
+                long steps = solutionSteps.size()-1;
 
                 if (heuristicChoiceBox.getValue().isBlank()) {
                     showAlert("Solution found using " + algorithmChoiceBox.getValue() + "!\n" +
