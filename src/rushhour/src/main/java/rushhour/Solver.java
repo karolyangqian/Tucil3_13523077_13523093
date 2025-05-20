@@ -24,6 +24,9 @@ public class Solver {
     }
 
     public List<State> solve(SearchMode searchMode) {
+        numMoves = 0;
+        foundSolution = false;
+        
         PriorityQueue<State> openSet;
 
         if (searchMode == SearchMode.A_STAR) {

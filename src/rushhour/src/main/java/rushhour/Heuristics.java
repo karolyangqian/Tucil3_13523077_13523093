@@ -1,5 +1,8 @@
 package rushhour;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class Heuristics {
     // MANHATTAN
     public static String heuristicType;
@@ -8,6 +11,9 @@ public class Heuristics {
         if (heuristicType.equals("MANHATTAN")) {
             return manhattanDistance(state);
         } 
+        else if (heuristicType.equals("BLOCKING_PIECE_COUNT")){
+            return blockingPieceCount(state);
+        }
         return 0; // Default case, should not happen
     }
 
@@ -32,5 +38,51 @@ public class Heuristics {
             dy = goalJ - pieceJRight;
         }
         return dx + dy;
+    }
+
+    private static int blockingPieceCount(State state) {
+        PrimaryPiece p = state.primaryPieceRef;
+        Board board = state.boardConfiguration;
+        int goalI = board.getWinPosI();
+        int goalJ = board.getWinPosJ();
+        Set<Piece> distinctPiece = new HashSet<>();
+
+        if (p.isVertical()){
+            if (p.getPosJ() != goalJ) return 0; 
+
+            int pieceTopEdge = p.getPosI();
+            int pieceBottomEdge = p.getPosI() + p.getHeight() - 1;
+
+            if (pieceBottomEdge < goalJ) { 
+                for (int r = pieceBottomEdge + 1; r <= goalJ; r++) { 
+                    Piece pp = board.getPieceAt(r, p.getPosJ());
+                    if (pp != null) distinctPiece.add(pp);
+                }
+            } else if (pieceTopEdge > goalJ) { 
+                for (int r = pieceTopEdge - 1; r >= goalJ; r--) { 
+                    Piece pp = board.getPieceAt(r, p.getPosJ());
+                    if (pp != null) distinctPiece.add(pp);
+                }
+            }
+        }
+        else {
+            if (p.getPosI() != goalI) return 0;
+
+            int pieceLeftEdge = p.getPosJ();
+            int pieceRightEdge = p.getPosJ() + p.getWidth() - 1;
+
+            if (pieceRightEdge < goalJ) {
+                for (int c = pieceRightEdge + 1; c <= goalJ; c++) {
+                    Piece pp = board.getPieceAt(p.getPosI(), c);
+                    if (pp != null) distinctPiece.add(pp);
+                }
+            } else if (pieceLeftEdge > goalJ) {
+                for (int c = pieceLeftEdge - 1; c >= goalJ; c--) {
+                    Piece pp = board.getPieceAt(p.getPosI(), c);
+                    if (pp != null) distinctPiece.add(pp);
+                }
+            }
+        }
+        return distinctPiece.size();
     }
 }
