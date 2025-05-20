@@ -29,6 +29,7 @@ import rushhour.Board;
 import rushhour.Heuristics;
 import rushhour.Piece;
 import rushhour.PrimaryPiece;
+import rushhour.Reader;
 import rushhour.Solver;
 import rushhour.Solver.SearchMode;
 import rushhour.State;
@@ -179,28 +180,40 @@ public class MainController {
 
         // TODO: Implement piece initialization logic
         // Stub pieces
-        Piece pieceA = new Piece(new String[]{"AA"}, 'A', 0, 0);
-        Piece pieceB = new Piece(new String[]{"B", "B"}, 'B', 0, 2); // Vertical
-        Piece pieceF = new Piece(new String[]{"F", "F", "F"}, 'F', 0, 5); // Vertical
+        // Pieces based on the image
+        // Piece pieceA = new Piece('A', 2, 1, 0, 0);
+        // Piece pieceB = new Piece('B', 1, 2, 0, 2); // Vertical
+        // Piece pieceF = new Piece('F', 1, 3, 0, 5); // Vertical
         
-        Piece pieceC = new Piece(new String[]{"C", "C"}, 'C', 1, 3); // Vertical
-        Piece pieceD = new Piece(new String[]{"D", "D"}, 'D', 1, 4); // Vertical
+        // Piece pieceC = new Piece('C', 1, 2, 1, 3); // Vertical
+        // Piece pieceD = new Piece('D', 1, 2, 1, 4); // Vertical
         
-        Piece pieceG = new Piece(new String[]{"G", "G", "G"}, 'G', 2, 0); // Vertical
-        PrimaryPiece primaryP = new PrimaryPiece(new String[]{"PP"}, 'P', 2, 1); // Horizontal (your definition)
-        // K is the exit, handled by Board's winPos and PrimaryPiece logic
+        // Piece pieceG = new Piece('G', 1, 3, 2, 0); // Vertical
+        // PrimaryPiece primaryP = new PrimaryPiece('P', 2, 1, 2, 1); // Horizontal (your definition)
+        // // K is the exit, handled by Board's winPos and PrimaryPiece logic
 
-        Piece pieceH = new Piece(new String[]{"H", "H"}, 'H', 3, 1); // Vertical
-        Piece pieceI = new Piece(new String[]{"III"}, 'I', 3, 3); // Horizontal
+        // Piece pieceH = new Piece('H', 1, 2, 3, 1); // Vertical
+        // Piece pieceI = new Piece('I', 3, 1, 3, 3); // Horizontal
         
-        Piece pieceJ = new Piece(new String[]{"J", "J"}, 'J', 4, 2); // Vertical    
+        // Piece pieceJ = new Piece('J', 1, 2, 4, 2); // Vertical
         
-        Piece pieceL = new Piece(new String[]{"LL"}, 'L', 5, 0); // Horizontalokok
-        Piece pieceM = new Piece(new String[]{"MM"}, 'M', 5, 3); // Horizontal
+        // Piece pieceL = new Piece('L', 2, 1, 5, 0); // Horizontal
+        // Piece pieceM = new Piece('M', 2, 1, 5, 3); // Horizontal
 
-        pieces = List.of(pieceA, pieceB, pieceC, pieceD, pieceF, pieceG, primaryP, pieceH, pieceI, pieceJ, pieceL, pieceM);
-        primaryPiece = primaryP;
-        board.buildBoard(pieces);
+        // pieces = List.of(pieceA, pieceB, pieceC, pieceD, pieceF, pieceG, primaryP, pieceH, pieceI, pieceJ, pieceL, pieceM);
+        // primaryPiece = primaryP;
+        // board.buildBoard(pieces);
+        String s =  "AAB..F\n" + 
+                    "..BCDF\n" + 
+                    "GPPCDFK\n" + 
+                    "GH.III\n" + 
+                    "GHJ...\n" + 
+                    "LLJMM.";
+
+        Reader r = new Reader(s, 6, 6, 11);
+        pieces = r.getPieces();
+        primaryPiece = r.getPrimaryPieceRef();
+        board = r.getBoard();
 
         // Initialize pieces on the board
         boardRectangles = new ArrayList<>();

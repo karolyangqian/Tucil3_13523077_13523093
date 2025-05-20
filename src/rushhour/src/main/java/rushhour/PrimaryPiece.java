@@ -4,8 +4,8 @@ public class PrimaryPiece extends Piece {
 
     private boolean win = false;
 
-    public PrimaryPiece(String[] piece, char color, int i, int j) {
-        super(piece, color, i, j);
+    public PrimaryPiece(char color, int width, int height, int i, int j) {
+        super(color, width, height, i, j);
     }
 
     public PrimaryPiece(PrimaryPiece piece) {
