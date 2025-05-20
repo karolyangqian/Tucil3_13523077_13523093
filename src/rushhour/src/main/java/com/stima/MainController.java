@@ -52,7 +52,6 @@ public class MainController {
     @FXML private Button solveButton;
     @FXML private TextArea boardTextArea;
     @FXML private Text alertMessageText;
-    @FXML private Button exportButton;
     @FXML private Text filenameText;
     @FXML private Button nextButton;
     @FXML private Button previousButton;
@@ -117,8 +116,7 @@ public class MainController {
         String s = boardTextArea.getText();
         
         if(!validateBoardInput(s)) {
-            exportButton.setDisable(true);
-            throw new IllegalArgumentException("Invalid board configuration");
+            throw new IllegalArgumentException("Board is empty");
         }
 
         int row, col, numPieces;
@@ -129,31 +127,31 @@ public class MainController {
         String[] lines = s.split("\\R");
         String[] firstLine = lines[0].split(" ");
         if (firstLine.length != 2) {
-            throw new IllegalArgumentException("Invalid board configuration");
+            throw new IllegalArgumentException("Must provide two integers for rows and columns");
         }
         try {
             row = Integer.parseInt(firstLine[0]);
             col = Integer.parseInt(firstLine[1]);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid board configuration");
+            throw new IllegalArgumentException("Rows and colums must be integers");
         }
 
         if (row <= 0 || col <= 0) {
-            throw new IllegalArgumentException("Invalid board configuration");
+            throw new IllegalArgumentException("Rows and colums must be non zero positive integers");
         }
         
         // second line is the number of pieces and must be positive
         String[] secondLine = lines[1].split(" ");
         if (secondLine.length != 1) {
-            throw new IllegalArgumentException("Invalid board configuration");
+            throw new IllegalArgumentException("Must provide one integer for number of pieces");
         }
         try {
             numPieces = Integer.parseInt(secondLine[0]);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid board configuration");
+            throw new IllegalArgumentException("Number of pieces must be an integer");
         }
         if (numPieces <= 0) {
-            throw new IllegalArgumentException("Invalid board configuration");
+            throw new IllegalArgumentException("Number of pieces must be a non zero positive integer");
         }
 
         // remove two first lines in s
@@ -174,7 +172,7 @@ public class MainController {
             primaryPiece = r.getPrimaryPieceRef();
             board = r.getBoard();
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid board configuration: " + e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
         }
         
         // Calculate grid size based on board dimensions
@@ -262,7 +260,6 @@ public class MainController {
 
     private void movePieceRectangle(PieceRectangle rect, int cellsX, int cellsY) {
         if (rect == null) return;
-        if (cellsX == 0 && cellsY == 0) return;
         
         Timeline timeline = createPieceTimeline(rect, cellsX, cellsY);
         timeline.play();
@@ -360,6 +357,18 @@ public class MainController {
 
         if (pieceIndex != -1) {
             int[] lastDelta = deltas[pieceIndex].remove(deltas[pieceIndex].size() - 1);
+
+            // If is last piece and is primary piece and isSolved, then move the piece out of bounds
+            if (pieceIndex == pieces.size() - 1 && currentState.getPieces().get(pieceIndex) instanceof PrimaryPiece && isSolved) {
+                if (currentState.getPieces().get(pieceIndex).isVertical()) {
+                    int sign = deltaY > 0 ? 1 : -1;
+                    deltaY += sign * currentState.getPieces().get(pieceIndex).getHeight();
+                } else {
+                    int sign = deltaX > 0 ? 1 : -1;
+                    deltaX += sign * currentState.getPieces().get(pieceIndex).getWidth();
+                }
+            }
+
             timeline = createPieceTimeline(boardRectangles.get(pieceIndex), deltaX + lastDelta[0], deltaY + lastDelta[1]);
             final int currentStepFinal = stepCount;
             timeline.setOnFinished(e -> {
@@ -418,6 +427,18 @@ public class MainController {
                 if (piece.getPosI() != nextPiece.getPosI() || piece.getPosJ() != nextPiece.getPosJ()) {
                     int deltaX = nextPiece.getPosJ() - piece.getPosJ();
                     int deltaY = nextPiece.getPosI() - piece.getPosI();
+                    
+                    // If is last piece and is primary piece and isSolved, then move the piece out of bounds
+                    if (i == pieces.size() - 1 && piece instanceof PrimaryPiece && isSolved) {
+                        if (piece.isVertical()) {
+                            int sign = deltaY > 0 ? 1 : -1;
+                            deltaY += sign * piece.getHeight();
+                        } else {
+                            int sign = deltaX > 0 ? 1 : -1;
+                            deltaX += sign * piece.getWidth();
+                        }
+                    }
+
                     movePieceRectangle(boardRectangles.get(i), deltaX, deltaY);
                 }
             }
@@ -641,7 +662,6 @@ public class MainController {
             isConfigured = true;
         } catch (IllegalArgumentException e) {
             showAlert("Invalid board configuration: " + e.getMessage(), "ERROR");
-            exportButton.setDisable(true);
             playButton.setDisable(true);
             nextButton.setDisable(true);
             previousButton.setDisable(true);
@@ -670,29 +690,6 @@ public class MainController {
                 }
             } catch (Exception e) {
                 showAlert("Error reading file: " + e.getMessage(), "ERROR");
-            }
-        }
-    }
-
-    @FXML
-    private void onClickExport() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Export Solution");
-        fileChooser.getExtensionFilters().addAll(
-            new FileChooser.ExtensionFilter("Text Files", "*.txt"),
-            new FileChooser.ExtensionFilter("All Files", "*.*")
-        );
-        fileChooser.setInitialFileName("solution-" + currentFile.getName());
-        
-        File file = fileChooser.showSaveDialog(new Stage());
-        if (file != null) {
-            try {
-                // TODO: Implement export logic
-                String solution = "Solution steps would be exported here";
-                Files.write(file.toPath(), solution.getBytes());
-                showAlert("Solution exported successfully!", "SUCCESS");
-            } catch (Exception e) {
-                showAlert("Error exporting solution: " + e.getMessage(), "ERROR");
             }
         }
     }
@@ -776,7 +773,6 @@ public class MainController {
                 }
                 
                 currentStep = 0;
-                exportButton.setDisable(false);
                 playButton.setDisable(false);
                 nextButton.setDisable(false);
                 previousButton.setDisable(false);
@@ -786,7 +782,6 @@ public class MainController {
                 updateStepCounterLabel(); 
             } else {
                 showAlert("No solution found.", "ERROR");
-                exportButton.setDisable(true);
                 playButton.setDisable(true);
                 nextButton.setDisable(true);
                 previousButton.setDisable(true);
@@ -800,7 +795,6 @@ public class MainController {
             isSolved = false; 
             Throwable exception = solveTask.getException();
             showAlert("Error during solving: " + exception.getMessage(), "ERROR");
-            exportButton.setDisable(true);
             playButton.setDisable(true);
             nextButton.setDisable(true);
             previousButton.setDisable(true);
@@ -847,7 +841,6 @@ public class MainController {
         isSolved = false;
         isPlaying = false;
         isConfigured = false;
-        exportButton.setDisable(true);
         playButton.setDisable(true);
         nextButton.setDisable(true);
         previousButton.setDisable(true);
