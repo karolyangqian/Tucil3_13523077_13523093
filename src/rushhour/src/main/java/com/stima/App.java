@@ -7,7 +7,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import rushhour.RushHour;
 
 /**
  * JavaFX App
@@ -18,14 +17,14 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        scene = new Scene(loadFXML("primary"), 1080, 720);
+        scene = new Scene(loadFXML("main"));
         stage.setTitle("Rush Hour Solver");
 
-        stage.setScene(scene);
+        stage.setScene(scene); 
         stage.show();
 
         // Uncomment the following line to run the RushHour main method for testing
-        RushHour.main(new String[] { "rushhour" });
+        // Main.main(new String[] { "rushhour" });
     }
 
     static void setRoot(String fxml) throws IOException {
