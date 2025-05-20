@@ -63,6 +63,7 @@ public class Solver {
         }
 
         System.out.println("No solution found.");
+        System.out.println("numMoves: " + numMoves);
         return List.of();
 
     }

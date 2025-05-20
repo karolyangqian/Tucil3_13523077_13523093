@@ -5,27 +5,28 @@ public class Piece {
     protected int width, height;
     protected char color;
     protected boolean isVertical;
-    protected boolean isInvalid = false;
-    protected String errorMsg;
 
-    public Piece(String[] piece, char color, int i, int j) {
+    public Piece(char color, int width, int height, int i, int j) {
         this.color = color;
-        this.width = piece[0].length();
-        this.height = piece.length;
+        this.width = width;
+        this.height = height;
         this.isVertical = this.width < this.height;
         this.posI = i;
         this.posJ = j;
         if (this.isVertical && this.width != 1) {
-            isInvalid = true;
-            errorMsg = "Invalid piece: " + color + " at (" + i + ", " + j + "). " +
-                    "Expected: piece's dimensions has to be 1x" + height + ", but found: " + width + "x" + height;
-            return;
+            String errorMsg = "Invalid piece: " + color + " at (" + i + ", " + j + "). " +
+            "Expected: piece's dimensions has to be 1x" + height + ", but found: " + width + "x" + height;
+            throw new IllegalArgumentException(errorMsg);
         }
         if (!this.isVertical && this.height != 1) {
-            isInvalid = true;
-            errorMsg = "Invalid piece: " + color + " at (" + i + ", " + j + "). " +
-                    "Expected: piece's dimensions has to be " + width + "x1, but found: " + width + "x" + height;
-            return;
+            String errorMsg = "Invalid piece: " + color + " at (" + i + ", " + j + "). " +
+            "Expected: piece's dimensions has to be " + width + "x1, but found: " + width + "x" + height;
+            throw new IllegalArgumentException(errorMsg);
+        }
+        if (this.width == this.height){
+            String errorMsg = "Invalid piece: " + color + " at (" + i + ", " + j + "). " +
+                    "Expected: piece's dimensions cannot be 1x1";
+            throw new IllegalArgumentException(errorMsg);
         }
     }
 
@@ -36,8 +37,6 @@ public class Piece {
         this.height = piece.height;
         this.color = piece.color;
         this.isVertical = piece.isVertical;
-        this.isInvalid = piece.isInvalid;
-        this.errorMsg = piece.errorMsg;
     }
 
     public boolean isPlaceable(int i, int j, Board board) {
@@ -89,12 +88,6 @@ public class Piece {
     }
     public boolean isVertical() {
         return isVertical;
-    }
-    public boolean isInvalid() {
-        return isInvalid;
-    }
-    public String getErrorMsg() {
-        return errorMsg;
     }
 
 }
