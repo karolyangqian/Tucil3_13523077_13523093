@@ -42,7 +42,6 @@
       </Pane>
       
       <Button fx:id="uploadFileButton" layoutX="220.0" layoutY="31.0" mnemonicParsing="false" onAction="#onClickUploadFile" text="Upload File" />
-      <Button fx:id="exportButton" disable="true" layoutX="327.0" layoutY="31.0" mnemonicParsing="false" onAction="#onClickExport" text="Export Solution" />
       <ScrollPane layoutX="221.0" layoutY="109.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" pickOnBounds="false" prefHeight="350.0" prefWidth="400.0">
          <content>
             <Pane fx:id="boardPane" prefHeight="350.0" prefWidth="400.0" />

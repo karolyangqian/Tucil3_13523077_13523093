@@ -22,7 +22,7 @@ public class Reader {
             throw new IllegalArgumentException("Invalid input: " + e.getMessage());
         }
 
-        lines = removeKFromInput(lines);
+        lines = removeKAndSpaceFromInput(lines);
 
         // Pemeriksaan defensif jika jumlah baris input string tidak sesuai dengan boardHeight
         if (lines.length != boardHeight) {
@@ -41,6 +41,10 @@ public class Reader {
                 grid[i][j] = lines[i].charAt(j);
                 visited[i][j] = false;
             }
+        }
+
+        if (!isValidBoard(lines, boardWidth, boardHeight)) {
+            throw new IllegalArgumentException("Invalid input: Invalid characters in the board");
         }
 
         Set<Character> processedPieceChars = new HashSet<>();
@@ -98,7 +102,11 @@ public class Reader {
         }
 
         if (this.primaryPieceRef == null){
-            throw new IllegalArgumentException("Invalid input: No primary piece 'P'");
+            throw new IllegalArgumentException("Invalid input: No primary piece \'P\'");
+        }
+
+        if (!isKPosValid()){
+            throw new IllegalArgumentException("Invalid input: K position is not aligned with primary piece \'P\'");
         }
 
         int count = 0;
@@ -134,6 +142,15 @@ public class Reader {
         return kPos;
     }
     
+    private boolean isKPosValid(){
+        if (this.primaryPieceRef.isVertical()){
+            return this.primaryPieceRef.getPosJ() == this.kPos[1];
+        }
+        else {
+            return this.primaryPieceRef.getPosI() == this.kPos[0];
+        }
+    }
+
     private int[] parseK(String[] lines, int width, int height) {
         int[] k = new int[]{-1, -1};
         for (int i = 0; i < lines.length; i++) {
@@ -150,32 +167,61 @@ public class Reader {
         if (k[0] == -1) {
             throw new IllegalArgumentException("No K piece found");
         }
+        int r = k[0];
+        int c = k[1];
+        int newR = -1;
+        int newC = -1;
 
-        if (k[0] == height || k[0] == 1){
-            if (k[1] == width) {
+        if (r == height) {
+            if (c >= 0 && c < width) { 
+                newR = height - 1;
+                newC = c;      
+            } else {
                 throw new IllegalArgumentException("Invalid K position");
             }
-            else {
-                if (k[0] == height) k[0]--;
+        }
+        else if (c == width) {
+            if (r >= 0 && r < height) {
+                newC = width - 1; 
+                newR = r;
+            } else {
+                throw new IllegalArgumentException("Invalid K position");
+            }
+        }
+        else if (r >= 0 && r < height && c >= 0 && c < width) {
+            boolean onWall = (r == 0 || c == 0);
+            if (onWall) {
+                newR = r; 
+                newC = c;
+            } else {
+                throw new IllegalArgumentException("Invalid K position");
             }
         }
         else {
-            if (k[1] != width && k[1] != 0) {
-                throw new IllegalArgumentException("Invalid K position");
-            }
-            else {
-                if (k[1] == width) k[1]--;
-            }
+            throw new IllegalArgumentException("Invalid K position");
         }
-        return k;
+
+        return new int[]{newR, newC};
     } 
 
-    private String[] removeKFromInput(String[] input){
+    private boolean isValidBoard(String[] lines, int width, int height) {
+        for (String line : lines) {
+            for (char c : line.toCharArray()) {
+                if (c != '.' && !Character.isLetter(c) && !Character.isUpperCase(c)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
+    private String[] removeKAndSpaceFromInput(String[] input){
         List<String> newInput = new ArrayList<>();
         for (String line : input) {
             StringBuilder newLine = new StringBuilder();
             for (int j = 0; j < line.length(); j++) {
-                if (line.charAt(j) != 'K') {
+                if (line.charAt(j) != 'K' && line.charAt(j) != ' ') {
                     newLine.append(line.charAt(j));
                 }
             }
