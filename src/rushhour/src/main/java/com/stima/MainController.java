@@ -100,7 +100,7 @@ public class MainController {
         algorithmChoiceBox.getItems().addAll("UCS", "A*", "GBFS");
         algorithmChoiceBox.setValue("UCS");
         
-        heuristicChoiceBox.getItems().addAll("Manhattan", "Euclidean");
+        heuristicChoiceBox.getItems().addAll("Manhattan");
         heuristicChoiceBox.setValue("");
         
         algorithmChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
@@ -108,6 +108,8 @@ public class MainController {
             heuristicChoiceBox.setValue(heuristicNeeded ? "Manhattan" : "");
             heuristicChoiceBox.setDisable(!heuristicNeeded);
         });
+
+        
 
     }
 
@@ -122,8 +124,6 @@ public class MainController {
         int row, col, numPieces;
 
         // input parsing
-
-        // first line is the number of rows and columns and must be positive
         String[] lines = s.split("\\R");
         String[] firstLine = lines[0].split(" ");
         if (firstLine.length != 2) {
@@ -140,7 +140,6 @@ public class MainController {
             throw new IllegalArgumentException("Rows and colums must be non zero positive integers");
         }
         
-        // second line is the number of pieces and must be positive
         String[] secondLine = lines[1].split(" ");
         if (secondLine.length != 1) {
             throw new IllegalArgumentException("Must provide one integer for number of pieces");
@@ -154,7 +153,6 @@ public class MainController {
             throw new IllegalArgumentException("Number of pieces must be a non zero positive integer");
         }
 
-        // remove two first lines in s
         StringBuilder sb = new StringBuilder();
         for (int i = 2; i < lines.length; i++) {
             sb.append(lines[i]);
@@ -171,27 +169,27 @@ public class MainController {
             pieces = r.getPieces();
             primaryPiece = r.getPrimaryPieceRef();
             board = r.getBoard();
+            System.out.println("Goal position: " + board.getWinPosI() + ", " + board.getWinPosJ());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(e.getMessage());
         }
         
-        // Calculate grid size based on board dimensions
         gridSize = Math.max(calculateGridSize(row, col), MIN_GRID_SIZE);
         
-        // Initialize board pane dimension
         boardPane.setPrefSize(col * gridSize, row * gridSize);
         boardPane.setStyle("-fx-background-color: lightgray;");
+
+        Rectangle clip = new Rectangle(boardPane.getPrefWidth(), boardPane.getPrefHeight());
+        clip.setLayoutX(boardPane.getLayoutX());
+        clip.setLayoutX(boardPane.getLayoutY());
+        boardPane.setClip(clip);
         
-        // Initialize pieces rectangles in UI
         initializePieces();
 
-        // Initialize solver
         solver = new Solver(board, pieces, primaryPiece);
 
-        // Initialize goal display
         initializeGoalDisplay();
 
-        // Set pieces as draggable
         boardPane.getChildren().forEach(this::makeDraggable);
     }
 
@@ -205,6 +203,7 @@ public class MainController {
         goalTriangle.setStrokeWidth(1);
         goalTriangle.setTranslateX((board.getWinPosJ() + 0.5) * gridSize - triangleBase / 2);
         goalTriangle.setTranslateY((board.getWinPosI() + 0.5) * gridSize - triangleHeight / 2);
+        goalTriangle.setMouseTransparent(true);
         if (board.getWinPosI() == 0) {
             goalTriangle.setAngle(270);
         } else if (board.getWinPosI() == board.getHeight() - 1) {
@@ -219,7 +218,7 @@ public class MainController {
 
     private void initializePieces() {
 
-        // Initialize pieces on the board
+        // Initialize pieces on the board pane
         boardRectangles = new ArrayList<>();
         for (Piece piece : pieces) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
             PieceRectangle rect = new PieceRectangle(piece.getWidth() * gridSize - 2*GRID_BORDER,
@@ -307,7 +306,8 @@ public class MainController {
         }
 
         // iterate through the solution steps
-        for (int step = currentStep; step < solutionSteps.size() - 1 && isPlaying; step++) {
+        int step;
+        for (step = currentStep; step < solutionSteps.size() - 1 && isPlaying; step++) {
             State nextState = solutionSteps.get(step + 1);
             
             timeline = null;
@@ -357,19 +357,26 @@ public class MainController {
 
         if (pieceIndex != -1) {
             int[] lastDelta = deltas[pieceIndex].remove(deltas[pieceIndex].size() - 1);
+            int[] newDelta = new int[]{lastDelta[0] + deltaX, lastDelta[1] + deltaY};
 
-            // If is last piece and is primary piece and isSolved, then move the piece out of bounds
-            if (pieceIndex == pieces.size() - 1 && currentState.getPieces().get(pieceIndex) instanceof PrimaryPiece && isSolved) {
+            
+            Piece pieceOnPlay = solutionSteps.get(currentStep).getPieces().get(pieceIndex);
+
+            // debug condition
+            // System.out.println("is primary piece: " + (pieceOnPlay instanceof PrimaryPiece));
+            // System.out.println("is solved: " + isSolved);
+            // System.out.println("is last step: " + (step + stepCount == solutionSteps.size() - 1));
+            // System.out.println("step: " + step);
+            // System.out.println("step count: " + stepCount);
+            if (pieceOnPlay instanceof PrimaryPiece && isSolved && step + stepCount >= solutionSteps.size() - 1) {
                 if (currentState.getPieces().get(pieceIndex).isVertical()) {
-                    int sign = deltaY > 0 ? 1 : -1;
-                    deltaY += sign * currentState.getPieces().get(pieceIndex).getHeight();
+                    newDelta[1] = board.getWinPosI() - pieceOnPlay.getPosI() - (board.getWinPosI() == 0 ? pieceOnPlay.getHeight() - 1 : 0);
                 } else {
-                    int sign = deltaX > 0 ? 1 : -1;
-                    deltaX += sign * currentState.getPieces().get(pieceIndex).getWidth();
+                    newDelta[0] = board.getWinPosJ() - pieceOnPlay.getPosJ() - (board.getWinPosJ() == 0 ? pieceOnPlay.getWidth() - 1 : 0);
                 }
+                System.out.println("Moving piece " + pieceIndex + " with delta: " + newDelta[0] + ", " + newDelta[1]);
             }
-
-            timeline = createPieceTimeline(boardRectangles.get(pieceIndex), deltaX + lastDelta[0], deltaY + lastDelta[1]);
+            timeline = createPieceTimeline(boardRectangles.get(pieceIndex), newDelta[0], newDelta[1]);
             final int currentStepFinal = stepCount;
             timeline.setOnFinished(e -> {
                 currentStep += currentStepFinal;
@@ -425,19 +432,28 @@ public class MainController {
                 Piece piece = currentState.getPieces().get(i);
                 Piece nextPiece = nextState.getPieces().get(i);
                 if (piece.getPosI() != nextPiece.getPosI() || piece.getPosJ() != nextPiece.getPosJ()) {
-                    int deltaX = nextPiece.getPosJ() - piece.getPosJ();
-                    int deltaY = nextPiece.getPosI() - piece.getPosI();
-                    
-                    // If is last piece and is primary piece and isSolved, then move the piece out of bounds
-                    if (i == pieces.size() - 1 && piece instanceof PrimaryPiece && isSolved) {
-                        if (piece.isVertical()) {
-                            int sign = deltaY > 0 ? 1 : -1;
-                            deltaY += sign * piece.getHeight();
-                        } else {
-                            int sign = deltaX > 0 ? 1 : -1;
-                            deltaX += sign * piece.getWidth();
-                        }
+
+                    // int pieceI = piece.getPosI();
+                    // int pieceJ = piece.getPosJ();
+
+                    // if (currentStep == solutionSteps.size() - 1 && piece instanceof PrimaryPiece) {
+                    //     pieceI = board.getWinPosI() == 0 ? -piece.getHeight() + 1 : board.getWinPosI();
+                    //     pieceJ = board.getWinPosJ() == 0 ? -piece.getWidth() + 1 : board.getWinPosJ();
+                    // }
+
+                    // int deltaX = nextPiece.getPosJ() - pieceJ;
+                    // int deltaY = nextPiece.getPosI() - pieceI;
+
+                    int nextPieceI = nextPiece.getPosI();
+                    int nextPieceJ = nextPiece.getPosJ();
+
+                    if (currentStep == solutionSteps.size() - 1 && piece instanceof PrimaryPiece) {
+                        nextPieceI = board.getWinPosI() == 0 ? -piece.getHeight() + 1 : board.getWinPosI();
+                        nextPieceJ = board.getWinPosJ() == 0 ? -piece.getWidth() + 1 : board.getWinPosJ();
                     }
+
+                    int deltaX = nextPieceJ - piece.getPosJ();
+                    int deltaY = nextPieceI - piece.getPosI();
 
                     movePieceRectangle(boardRectangles.get(i), deltaX, deltaY);
                 }
@@ -462,9 +478,16 @@ public class MainController {
                 Piece piece = currentState.getPieces().get(i);
                 Piece prevPiece = prevState.getPieces().get(i);
                 if (piece.getPosI() != prevPiece.getPosI() || piece.getPosJ() != prevPiece.getPosJ()) {
-                    int deltaX = prevPiece.getPosJ() - piece.getPosJ();
-                    int deltaY = prevPiece.getPosI() - piece.getPosI();
+                    int pieceI = piece.getPosI();
+                    int pieceJ = piece.getPosJ();
+                    if (currentStep+1 == solutionSteps.size() - 1 && piece instanceof PrimaryPiece) {
+                        pieceI = board.getWinPosI() == 0 ? -piece.getHeight() + 1 : board.getWinPosI();
+                        pieceJ = board.getWinPosJ() == 0 ? -piece.getWidth() + 1 : board.getWinPosJ();
+                    }
+                    int deltaX = prevPiece.getPosJ() - pieceJ;
+                    int deltaY = prevPiece.getPosI() - pieceI;
                     movePieceRectangle(boardRectangles.get(i), deltaX, deltaY);
+                    break;
                 }
             }
             updateStepCounterLabel();
@@ -477,17 +500,24 @@ public class MainController {
             for (int i = 0; i < pieces.size(); i++) {
                 Piece piece = currentState.getPieces().get(i);
                 PieceRectangle rect = boardRectangles.get(i);
-                rect.setX(piece.getPosJ() * gridSize + GRID_BORDER);
-                rect.setY(piece.getPosI() * gridSize + GRID_BORDER);
+                int pieceI = piece.getPosI();
+                int pieceJ = piece.getPosJ();
+                if (currentStep == solutionSteps.size() - 1 && piece instanceof PrimaryPiece) {
+                    pieceI = board.getWinPosI() == 0 ? -piece.getHeight() + 1 : board.getWinPosI();
+                    pieceJ = board.getWinPosJ() == 0 ? -piece.getWidth() + 1 : board.getWinPosJ();
+                }
+                double x = pieceJ * gridSize + GRID_BORDER;
+                double y = pieceI * gridSize + GRID_BORDER;
+                rect.setX(x);
+                rect.setY(y);
             }
             updateStepCounterLabel();
         }
     }
 
     private void updateStepCounterLabel() {
-        System.out.println("Current step: " + currentStep);
         if (solutionSteps != null && !solutionSteps.isEmpty() && isSolved) { 
-            stepCounterLabel.setText("Step: " + (currentStep + 1) + " out of " + solutionSteps.size());
+            stepCounterLabel.setText("Step: " + (currentStep) + " out of " + (solutionSteps.size()-1));
         } else {
             stepCounterLabel.setText("Step: -"); 
         }
@@ -522,7 +552,7 @@ public class MainController {
                 double bottommostY = calculateBottommostY(boardRectangle);
                 newY = Math.min(bottommostY, newY);
             }
-            boardRectangle.setY(Math.max(0, Math.min(newY, boardPane.getHeight() - boardRectangle.getHeight())));
+            boardRectangle.setY(newY);
         } else {
             // Horizontal piece - move along X axis
             double deltaX = event.getSceneX() - dragStartX;
@@ -534,7 +564,7 @@ public class MainController {
                 double rightmostX = calculateRightmostX(boardRectangle);
                 newX = Math.min(rightmostX, newX);
             }
-            boardRectangle.setX(Math.max(0, Math.min(newX, boardPane.getWidth() - boardRectangle.getWidth())));
+            boardRectangle.setX(newX);
         }
     }
 
@@ -586,6 +616,10 @@ public class MainController {
             }
         }
 
+        if (rect.isPrimaryPiece() && board.getWinPosJ() == 0) {
+            return -rect.getWidth() + gridSize;
+        }
+
         return 0;
     }
 
@@ -601,6 +635,10 @@ public class MainController {
             if (rect.getX() >= otherRect.getX() && rect.getX() <= otherRect.getX() + otherRect.getWidth()) {
                 return otherRect.getY() + otherRect.getHeight();
             }
+        }
+
+        if (rect.isPrimaryPiece() && board.getWinPosI() == 0) {
+            return -rect.getHeight() + gridSize;
         }
 
         return 0;
@@ -620,6 +658,11 @@ public class MainController {
             }
         }
 
+        // if is primary piece and the goal is to the right
+        if (rect.isPrimaryPiece() && board.getWinPosJ() == board.getWidth() - 1) {
+            return boardPane.getWidth() - gridSize;
+        }
+
         return boardPane.getWidth() - rect.getWidth();
     }
 
@@ -637,7 +680,11 @@ public class MainController {
             }
         }
 
-        return boardPane.getHeight() - rect.getHeight();
+        if (rect.isPrimaryPiece() && board.getWinPosI() == board.getHeight() - 1) {
+            return boardPane.getHeight() - gridSize;
+        }
+
+        return boardPane.getHeight() - gridSize;
     }
 
     
@@ -714,6 +761,13 @@ public class MainController {
             return;
         }
 
+        playButton.setDisable(true);
+        nextButton.setDisable(true);
+        previousButton.setDisable(true);
+        toStartButton.setDisable(true);
+        toEndButton.setDisable(true);
+        stepCounterLabel.setVisible(false);
+
         // Reset isSolved if you intend to allow re-solving
         isSolved = false; 
 
@@ -742,7 +796,12 @@ public class MainController {
             @Override
             protected Boolean call() throws Exception { 
                 Heuristics.heuristicType = heuristic.toUpperCase();
-                solutionSteps = solver.solve(searchMode); 
+
+                // solutionSteps = new ArrayList<>();
+                // solutionSteps.add(new rushhour.State(board, pieces, null, null, 0, primaryPiece));
+                // solutionSteps.addAll(solver.solve(searchMode));
+
+                solutionSteps = solver.solve(searchMode);
 
                 boolean foundSolution = solver.hasFoundSolution(); 
                 return foundSolution;
