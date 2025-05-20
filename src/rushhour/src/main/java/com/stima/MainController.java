@@ -674,6 +674,7 @@ public class MainController {
         clearBoard();
         clearFileName();
         FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File("../../test"));
         fileChooser.setTitle("Open Rush Hour Board File");
         fileChooser.getExtensionFilters().add(
             new FileChooser.ExtensionFilter("Text Files", "*.txt"));
