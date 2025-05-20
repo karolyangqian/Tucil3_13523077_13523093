@@ -55,6 +55,8 @@ public class MainController {
     @FXML private Text filenameText;
     @FXML private Button nextButton;
     @FXML private Button previousButton;
+    @FXML private Button toStartButton;
+    @FXML private Button toEndButton;
     @FXML private Button playButton;
     @FXML private Button applyConfigurationButton;
     @FXML private Label stepCounterLabel;
@@ -91,13 +93,8 @@ public class MainController {
         isPlaying = false;
         isConfigured = false;
 
-        playButton.setDisable(true);
-        nextButton.setDisable(true);
-        previousButton.setDisable(true);
-        exportButton.setDisable(true);
-        heuristicChoiceBox.setDisable(true);
-        stepCounterLabel.setVisible(false);
-        algorithmChoiceBox.setDisable(false);
+        clearAlerts();
+        clearBoard();
 
 
         algorithmChoiceBox.getItems().addAll("UCS", "A*", "GBFS");
@@ -243,14 +240,9 @@ public class MainController {
 
     private void movePieceRectangle(PieceRectangle rect, int cellsX, int cellsY) {
         if (rect == null) return;
-        System.out.println("Moving piece rectangle: " + rect.getColor() + " by (" + cellsX + ", " + cellsY + ")");
         if (cellsX == 0 && cellsY == 0) return;
-        // if (isPlaying) return;
         
         Timeline timeline = createPieceTimeline(rect, cellsX, cellsY);
-        // timeline.setOnFinished(e -> {
-        //     isPlaying = false;
-        // });
         timeline.play();
     }
 
@@ -263,12 +255,10 @@ public class MainController {
 
         setRectanglesToCurrentState();
         if (isPlaying) {
-            // Pause the animation
             isPlaying = false;
             playButton.setText("Play");
             nextButton.setDisable(false);
             previousButton.setDisable(false);
-            // set stop on the next animation
             if (sequentialTransition != null) {
                 sequentialTransition.stop();
             }
@@ -286,10 +276,18 @@ public class MainController {
         }
         sequentialTransition = new SequentialTransition();
 
-        // Start from current step
         State currentState = solutionSteps.get(currentStep);
         int deltaX = 0, deltaY = 0, pieceIndex = -1, stepCount = 0;
         Timeline timeline = null;
+
+        // track last movement of each piece
+        ArrayList<int[]>[] deltas = new ArrayList[pieces.size()];
+        for (int i = 0; i < deltas.length; i++) {
+            deltas[i] = new ArrayList<>();
+            deltas[i].add(new int[]{0, 0});
+        }
+
+        // iterate through the solution steps
         for (int step = currentStep; step < solutionSteps.size() - 1 && isPlaying; step++) {
             State nextState = solutionSteps.get(step + 1);
             
@@ -300,7 +298,7 @@ public class MainController {
                 Piece piece = currentState.getPieces().get(i);
                 Piece nextPiece = nextState.getPieces().get(i);
                 if (piece.getPosI() != nextPiece.getPosI() || piece.getPosJ() != nextPiece.getPosJ()) {
-
+                    // piece moved
                     stepCount++;
                     if (pieceIndex == -1) {
                         pieceIndex = i;
@@ -311,7 +309,10 @@ public class MainController {
                         deltaY += nextPiece.getPosI() - piece.getPosI();
                     } else {
                         PieceRectangle previousRect = boardRectangles.get(pieceIndex);
-                        timeline = createPieceTimeline(previousRect, deltaX, deltaY);
+                        int[] lastDelta = deltas[pieceIndex].remove(deltas[pieceIndex].size() - 1);
+                        int[] newDelta = new int[]{lastDelta[0] + deltaX, lastDelta[1] + deltaY};
+                        timeline = createPieceTimeline(previousRect, newDelta[0], newDelta[1]);
+                        deltas[pieceIndex].add(new int[]{newDelta[0], newDelta[1]});
                         final int currentStepFinal = stepCount;
                         timeline.setOnFinished(e -> {
                             currentStep += currentStepFinal;
@@ -336,7 +337,8 @@ public class MainController {
         }
 
         if (pieceIndex != -1) {
-            timeline = createPieceTimeline(boardRectangles.get(pieceIndex), deltaX, deltaY);
+            int[] lastDelta = deltas[pieceIndex].remove(deltas[pieceIndex].size() - 1);
+            timeline = createPieceTimeline(boardRectangles.get(pieceIndex), deltaX + lastDelta[0], deltaY + lastDelta[1]);
             final int currentStepFinal = stepCount;
             timeline.setOnFinished(e -> {
                 currentStep += currentStepFinal;
@@ -354,6 +356,26 @@ public class MainController {
         });
         
         sequentialTransition.play();
+    }
+
+    @FXML
+    private void onClickToStart() {
+        if (!isPlaying) {
+            setRectanglesToCurrentState();
+            currentStep = 0;
+            setRectanglesToCurrentState();
+            updateStepCounterLabel();
+        }
+    }
+
+    @FXML
+    private void onClickToEnd() {
+        if (!isPlaying) {
+            setRectanglesToCurrentState();
+            currentStep = solutionSteps.size() - 1;
+            setRectanglesToCurrentState();
+            updateStepCounterLabel();
+        }
     }
     
     @FXML
@@ -529,7 +551,7 @@ public class MainController {
         sortedRects.sort((r1, r2) -> Double.compare(r1.getY(), r2.getY()));
 
         int index = sortedRects.indexOf(rect);
-        if (index == -1) return rectStartY; // not found
+        if (index == -1) return rectStartY;
 
         for (int i = index - 1; i >= 0; i--) {
             PieceRectangle otherRect = sortedRects.get(i);
@@ -698,16 +720,16 @@ public class MainController {
 
         Task<Boolean> solveTask = new Task<Boolean>() {
             @Override
-            protected Boolean call() throws Exception { // It's good practice to declare exceptions solver.solve might throw
+            protected Boolean call() throws Exception { 
                 Heuristics.heuristicType = heuristic.toUpperCase();
-                solutionSteps = solver.solve(searchMode); // Or get from ChoiceBox
+                solutionSteps = solver.solve(searchMode); 
 
                 boolean foundSolution = solver.hasFoundSolution(); 
                 return foundSolution;
             }
         };
 
-        setupSolveTask(solveTask); // Pass the modified task
+        setupSolveTask(solveTask); 
         solvingStartTime = System.currentTimeMillis();
         new Thread(solveTask).start();
     }
@@ -736,6 +758,8 @@ public class MainController {
                 playButton.setDisable(false);
                 nextButton.setDisable(false);
                 previousButton.setDisable(false);
+                toStartButton.setDisable(false);
+                toEndButton.setDisable(false);
                 stepCounterLabel.setVisible(true);
                 updateStepCounterLabel(); 
             } else {
@@ -744,6 +768,8 @@ public class MainController {
                 playButton.setDisable(true);
                 nextButton.setDisable(true);
                 previousButton.setDisable(true);
+                toStartButton.setDisable(true);
+                toEndButton.setDisable(true);
                 stepCounterLabel.setVisible(false);
             }
         });
@@ -815,6 +841,8 @@ public class MainController {
         playButton.setDisable(true);
         nextButton.setDisable(true);
         previousButton.setDisable(true);
+        toStartButton.setDisable(true);
+        toEndButton.setDisable(true);
         stepCounterLabel.setVisible(isSolved);
     }
 
