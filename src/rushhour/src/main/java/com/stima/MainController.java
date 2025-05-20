@@ -174,7 +174,7 @@ public class MainController {
             primaryPiece = r.getPrimaryPieceRef();
             board = r.getBoard();
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid board configuration: " + e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
         }
         
         // Calculate grid size based on board dimensions

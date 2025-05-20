@@ -122,6 +122,7 @@ public class State {
             currentState = currentState.parent;
         }
         List<State> reversedStates = new ArrayList<>();
+        reversedStates.add(states.get(states.size() - 1)); // Add the initial state
         for (int i = moves.size() - 1; i >= 0; i--) {
             reversedStates.add(states.get(i));
             System.out.println("Gerakan " + (moves.size() - i) + ": " + moves.get(i).toString());
