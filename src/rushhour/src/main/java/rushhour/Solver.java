@@ -36,17 +36,14 @@ public class Solver {
             openSet = new PriorityQueue<>(Comparator.comparingInt(s -> s.gCost));
         }
 
-        Set<String> closedSet = new HashSet<>();
+        Set<State> closedSet = new HashSet<>();
 
         State initialState = new State(this.board, this.pieces, null, null, 0, this.primaryPiece);
         openSet.add(initialState);
+        closedSet.add(initialState);
         while (!openSet.isEmpty()) {
             State currentState = openSet.poll();
-            // System.out.println(currentState.boardConfiguration.toString());
-            closedSet.add(currentState.toString());
             numMoves++;
-
-            // if (currentState.gCost > 2) return;
 
             if (currentState.isGoal()) {
                 foundSolution = true;
@@ -56,8 +53,9 @@ public class Solver {
 
             List<State> successors = currentState.generateSuccessors();
             for (State successor : successors) {
-                if (!closedSet.contains(successor.toString())) {
+                if (!closedSet.contains(successor)) {
                     openSet.add(successor);
+                    closedSet.add(successor);
                 }
             }
         }

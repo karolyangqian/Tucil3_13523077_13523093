@@ -30,14 +30,14 @@ public class Main {
 
         // List<Piece> pieces = List.of(pieceA, pieceB, pieceC, pieceD, pieceF, pieceG, primaryP, pieceH, pieceI, pieceJ, pieceL, pieceM);
 
-        String s =  "AAB..F\n" + 
-                    "..BCDF\n" + 
-                    "GPPCDFK\n" + 
-                    "GH.III\n" + 
-                    "GHJ...\n" + 
-                    "LLJMM.";
+        String s =  "AEE.H.\n" +
+                        "AFG.HI\n" +
+                        "AFGPPIK\n" +
+                        "BBBJ.I\n" +
+                        "..DJLL\n" +
+                        "CCDMM.";
 
-        Reader r = new Reader(s, 6, 6, 11);
+        Reader r = new Reader(s, 6, 6, 12);
         List<Piece> pieces = r.getPieces();
         Board board = r.getBoard();
         PrimaryPiece primaryP = r.getPrimaryPieceRef();
@@ -47,6 +47,6 @@ public class Main {
 
         Solver solver = new Solver(board, pieces, primaryP);
         Heuristics.heuristicType = "MANHATTAN"; // Set heuristic type
-        solver.solve(SearchMode.A_STAR);
+        solver.solve(SearchMode.UCS);
     }
 }
