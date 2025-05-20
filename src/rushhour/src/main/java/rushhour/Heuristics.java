@@ -56,12 +56,12 @@ public class Heuristics {
             if (pieceBottomEdge < goalJ) { 
                 for (int r = pieceBottomEdge + 1; r <= goalJ; r++) { 
                     Piece pp = board.getPieceAt(r, p.getPosJ());
-                    if (pp != null) distinctPiece.add(p);
+                    if (pp != null) distinctPiece.add(pp);
                 }
             } else if (pieceTopEdge > goalJ) { 
                 for (int r = pieceTopEdge - 1; r >= goalJ; r--) { 
                     Piece pp = board.getPieceAt(r, p.getPosJ());
-                    if (pp != null) distinctPiece.add(p);
+                    if (pp != null) distinctPiece.add(pp);
                 }
             }
         }
@@ -71,15 +71,15 @@ public class Heuristics {
             int pieceLeftEdge = p.getPosJ();
             int pieceRightEdge = p.getPosJ() + p.getWidth() - 1;
 
-            if (pieceRightEdge < goalJ) { // Bergerak ke KANAN
-                for (int c = pieceRightEdge + 1; c < goalJ; c++) {
+            if (pieceRightEdge < goalJ) {
+                for (int c = pieceRightEdge + 1; c <= goalJ; c++) {
                     Piece pp = board.getPieceAt(p.getPosI(), c);
-                    if (pp != null) distinctPiece.add(p);
+                    if (pp != null) distinctPiece.add(pp);
                 }
-            } else if (pieceLeftEdge > goalJ) { // Bergerak ke KIRI
-                for (int c = pieceLeftEdge - 1; c > goalJ; c--) {
+            } else if (pieceLeftEdge > goalJ) {
+                for (int c = pieceLeftEdge - 1; c >= goalJ; c--) {
                     Piece pp = board.getPieceAt(p.getPosI(), c);
-                    if (pp != null) distinctPiece.add(p);
+                    if (pp != null) distinctPiece.add(pp);
                 }
             }
         }
