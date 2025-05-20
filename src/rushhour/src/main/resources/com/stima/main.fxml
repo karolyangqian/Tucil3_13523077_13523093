@@ -68,9 +68,11 @@
       </TextFlow>
       <HBox alignment="CENTER" layoutX="315.0" layoutY="80.0" prefHeight="25.0" prefWidth="213.0" spacing="10.0">
          <children>
+            <Button fx:id="toStartButton" mnemonicParsing="false" onAction="#onClickToStart" text="&lt;&lt;" />
             <Button fx:id="previousButton" mnemonicParsing="false" onAction="#onClickPrevious" text="&lt;" />
             <Button fx:id="playButton" mnemonicParsing="false" onAction="#onClickPlay" text="Play" />
             <Button fx:id="nextButton" mnemonicParsing="false" onAction="#onClickNext" text="&gt;" />
+            <Button fx:id="toEndButton" layoutX="167.0" layoutY="10.0" mnemonicParsing="false" onAction="#onClickToEnd" text="&gt;&gt;" />
          </children>
       </HBox>
       <Label fx:id="stepCounterLabel" layoutX="528.0" layoutY="84.0" text="Step 0 out of 10" />
