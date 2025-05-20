@@ -79,7 +79,7 @@ public class State {
                 if (i == 0) {
                     String direction = chosenPiece.isVertical() ? "UP" : "LEFT";
                     Move move = new Move(chosenPiece.getColor(), direction);
-                    if (chosenPiece.moveBackward(newBoard)){
+                    while (chosenPiece.moveBackward(newBoard)){
                         newState = new State(newBoard, newPieces, this, move, gCost + 1, newPrimaryPiece);
                         successors.add(newState);
                     }
@@ -87,7 +87,7 @@ public class State {
                 else {
                     String direction = chosenPiece.isVertical() ? "DOWN" : "RIGHT";
                     Move move = new Move(chosenPiece.getColor(), direction);
-                    if(chosenPiece.moveForward(newBoard)){
+                    while (chosenPiece.moveForward(newBoard)){
                         newState = new State(newBoard, newPieces, this, move, gCost + 1, newPrimaryPiece);
                         successors.add(newState);
                     }
@@ -121,11 +121,13 @@ public class State {
             states.add(currentState);
             currentState = currentState.parent;
         }
+        List<State> reversedStates = new ArrayList<>();
         for (int i = moves.size() - 1; i >= 0; i--) {
+            reversedStates.add(states.get(i));
             System.out.println("Gerakan " + (moves.size() - i) + ": " + moves.get(i).toString());
             System.out.println(states.get(i).boardConfiguration.toString());
         }
-        return states.reversed();
+        return reversedStates;
     }
 
     public List<Piece> getPieces() {
