@@ -113,23 +113,69 @@ public class MainController {
     }
 
     private void initializeBoard() {
-        // TODO: might need try catch to handle invalid input
 
-        String rawInput = boardTextArea.getText();
+        String s = boardTextArea.getText();
         
-        if(!validateBoardInput(rawInput)) {
+        if(!validateBoardInput(s)) {
             exportButton.setDisable(true);
             throw new IllegalArgumentException("Invalid board configuration");
         }
 
-        // Initialize rush hour board dimensions and goal position
-        int row = 6;
-        int col = 6;
-        int winPosI = 2;
-        int winPosJ = 5;
-        board = new Board(row, col, winPosI, winPosJ);
+        int row, col, numPieces;
 
-        // board = parseBoard(rawInput);
+        // input parsing
+
+        // first line is the number of rows and columns and must be positive
+        String[] lines = s.split("\\R");
+        String[] firstLine = lines[0].split(" ");
+        if (firstLine.length != 2) {
+            throw new IllegalArgumentException("Invalid board configuration");
+        }
+        try {
+            row = Integer.parseInt(firstLine[0]);
+            col = Integer.parseInt(firstLine[1]);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid board configuration");
+        }
+
+        if (row <= 0 || col <= 0) {
+            throw new IllegalArgumentException("Invalid board configuration");
+        }
+        
+        // second line is the number of pieces and must be positive
+        String[] secondLine = lines[1].split(" ");
+        if (secondLine.length != 1) {
+            throw new IllegalArgumentException("Invalid board configuration");
+        }
+        try {
+            numPieces = Integer.parseInt(secondLine[0]);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid board configuration");
+        }
+        if (numPieces <= 0) {
+            throw new IllegalArgumentException("Invalid board configuration");
+        }
+
+        // remove two first lines in s
+        StringBuilder sb = new StringBuilder();
+        for (int i = 2; i < lines.length; i++) {
+            sb.append(lines[i]);
+            if (i != lines.length - 1) {
+                sb.append("\n");
+            }
+        }
+
+        s = sb.toString();
+
+        // initialize board and pieces
+        try {
+            Reader r = new Reader(s, col, row, numPieces);
+            pieces = r.getPieces();
+            primaryPiece = r.getPrimaryPieceRef();
+            board = r.getBoard();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid board configuration: " + e.getMessage());
+        }
         
         // Calculate grid size based on board dimensions
         gridSize = Math.max(calculateGridSize(row, col), MIN_GRID_SIZE);
@@ -138,7 +184,7 @@ public class MainController {
         boardPane.setPrefSize(col * gridSize, row * gridSize);
         boardPane.setStyle("-fx-background-color: lightgray;");
         
-        // Initialize pieces
+        // Initialize pieces rectangles in UI
         initializePieces();
 
         // Initialize solver
@@ -174,43 +220,6 @@ public class MainController {
     }
 
     private void initializePieces() {
-
-        // TODO: Implement piece initialization logic
-        // Stub pieces
-        // Pieces based on the image
-        // Piece pieceA = new Piece('A', 2, 1, 0, 0);
-        // Piece pieceB = new Piece('B', 1, 2, 0, 2); // Vertical
-        // Piece pieceF = new Piece('F', 1, 3, 0, 5); // Vertical
-        
-        // Piece pieceC = new Piece('C', 1, 2, 1, 3); // Vertical
-        // Piece pieceD = new Piece('D', 1, 2, 1, 4); // Vertical
-        
-        // Piece pieceG = new Piece('G', 1, 3, 2, 0); // Vertical
-        // PrimaryPiece primaryP = new PrimaryPiece('P', 2, 1, 2, 1); // Horizontal (your definition)
-        // // K is the exit, handled by Board's winPos and PrimaryPiece logic
-
-        // Piece pieceH = new Piece('H', 1, 2, 3, 1); // Vertical
-        // Piece pieceI = new Piece('I', 3, 1, 3, 3); // Horizontal
-        
-        // Piece pieceJ = new Piece('J', 1, 2, 4, 2); // Vertical
-        
-        // Piece pieceL = new Piece('L', 2, 1, 5, 0); // Horizontal
-        // Piece pieceM = new Piece('M', 2, 1, 5, 3); // Horizontal
-
-        // pieces = List.of(pieceA, pieceB, pieceC, pieceD, pieceF, pieceG, primaryP, pieceH, pieceI, pieceJ, pieceL, pieceM);
-        // primaryPiece = primaryP;
-        // board.buildBoard(pieces);
-        String s =  "AAB..F\n" + 
-                    "..BCDF\n" + 
-                    "GPPCDFK\n" + 
-                    "GH.III\n" + 
-                    "GHJ...\n" + 
-                    "LLJMM.";
-
-        Reader r = new Reader(s, 6, 6, 11);
-        pieces = r.getPieces();
-        primaryPiece = r.getPrimaryPieceRef();
-        board = r.getBoard();
 
         // Initialize pieces on the board
         boardRectangles = new ArrayList<>();
@@ -806,19 +815,7 @@ public class MainController {
             return false;
         }
         
-        String[] lines = input.split("\\R");
-        if(lines.length < 6) {
-            showAlert("Invalid board format - minimum 6x6 grid required", "ERROR");
-            return false;
-        }
-        
         return true;
-    }
-
-    private Board parseBoard(String input) throws IllegalArgumentException {
-        // TODO: Implement board parsing logic
-        
-        return new Board(6, 6, 2, 5); // Placeholder
     }
 
     private void showAlert(String message, String type) {
