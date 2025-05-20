@@ -100,7 +100,7 @@ public class MainController {
         algorithmChoiceBox.getItems().addAll("UCS", "A*", "GBFS");
         algorithmChoiceBox.setValue("UCS");
         
-        heuristicChoiceBox.getItems().addAll("Manhattan");
+        heuristicChoiceBox.getItems().addAll("Manhattan", "Blocking Piece Count");
         heuristicChoiceBox.setValue("");
         
         algorithmChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
@@ -802,7 +802,7 @@ public class MainController {
         Task<Boolean> solveTask = new Task<Boolean>() {
             @Override
             protected Boolean call() throws Exception { 
-                Heuristics.heuristicType = heuristic.toUpperCase();
+                Heuristics.heuristicType = heuristic.toUpperCase().replace(" ", "_");
 
                 // solutionSteps = new ArrayList<>();
                 // solutionSteps.add(new rushhour.State(board, pieces, null, null, 0, primaryPiece));
