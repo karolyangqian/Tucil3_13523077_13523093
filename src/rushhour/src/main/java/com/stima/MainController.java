@@ -96,21 +96,17 @@ public class MainController {
         clearAlerts();
         clearBoard();
 
-
-        algorithmChoiceBox.getItems().addAll("UCS", "A*", "GBFS");
-        algorithmChoiceBox.setValue("UCS");
-        
-        heuristicChoiceBox.getItems().addAll("Manhattan", "Blocking Piece Count");
-        heuristicChoiceBox.setValue("");
-        
         algorithmChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             boolean heuristicNeeded = !newVal.equals("UCS");
             heuristicChoiceBox.setValue(heuristicNeeded ? "Manhattan" : "");
             heuristicChoiceBox.setDisable(!heuristicNeeded);
         });
 
+        algorithmChoiceBox.getItems().addAll("UCS", "A*", "GBFS");
+        algorithmChoiceBox.setValue("UCS");
         
-
+        heuristicChoiceBox.getItems().addAll("Manhattan", "Blocking Piece Count");
+        heuristicChoiceBox.setValue("");
     }
 
     private void initializeBoard() {
@@ -902,18 +898,22 @@ public class MainController {
     }
 
     private void clearBoard() {
-        if (boardPane != null) boardPane.getChildren().clear();
-        if (boardRectangles != null) boardRectangles.clear();
-        if (solutionSteps != null) solutionSteps.clear();
-        isSolved = false;
-        isPlaying = false;
-        isConfigured = false;
-        playButton.setDisable(true);
-        nextButton.setDisable(true);
-        previousButton.setDisable(true);
-        toStartButton.setDisable(true);
-        toEndButton.setDisable(true);
-        stepCounterLabel.setVisible(isSolved);
+        try {
+            if (boardPane != null) boardPane.getChildren().clear();
+            if (boardRectangles != null) boardRectangles.clear();
+            if (solutionSteps != null) solutionSteps.clear();
+            isSolved = false;
+            isPlaying = false;
+            isConfigured = false;
+            playButton.setDisable(true);
+            nextButton.setDisable(true);
+            previousButton.setDisable(true);
+            toStartButton.setDisable(true);
+            toEndButton.setDisable(true);
+            stepCounterLabel.setVisible(isSolved);
+        } catch (Exception e) {
+            System.err.println("Error: " + e);
+        }
     }
 
     private void clearFileName() {

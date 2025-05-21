@@ -65,8 +65,7 @@ public class Solver {
 
         System.out.println("No solution found.");
         System.out.println("numMoves: " + numMoves);
-        return List.of();
-
+        return new java.util.ArrayList<>();
     }
 
     public int getNumMoves() {
