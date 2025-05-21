@@ -435,18 +435,6 @@ public class MainController {
                 Piece piece = currentState.getPieces().get(i);
                 Piece nextPiece = nextState.getPieces().get(i);
                 if (piece.getPosI() != nextPiece.getPosI() || piece.getPosJ() != nextPiece.getPosJ()) {
-
-                    // int pieceI = piece.getPosI();
-                    // int pieceJ = piece.getPosJ();
-
-                    // if (currentStep == solutionSteps.size() - 1 && piece instanceof PrimaryPiece) {
-                    //     pieceI = board.getWinPosI() == 0 ? -piece.getHeight() + 1 : board.getWinPosI();
-                    //     pieceJ = board.getWinPosJ() == 0 ? -piece.getWidth() + 1 : board.getWinPosJ();
-                    // }
-
-                    // int deltaX = nextPiece.getPosJ() - pieceJ;
-                    // int deltaY = nextPiece.getPosI() - pieceI;
-
                     int nextPieceI = nextPiece.getPosI();
                     int nextPieceJ = nextPiece.getPosJ();
 
